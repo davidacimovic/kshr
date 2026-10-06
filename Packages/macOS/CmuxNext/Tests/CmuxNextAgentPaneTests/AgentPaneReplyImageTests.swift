@@ -188,7 +188,7 @@ import UniformTypeIdentifiers
 /// not public, a body over the cap, and a connection whose address is unknown or private.
 @Suite struct AgentPaneSafeFetchTests {
     /// Serves `https://public.example/<path>` from a fixed table.
-    final class Stub: URLProtocol, @unchecked Sendable {
+    nonisolated final class Stub: URLProtocol, @unchecked Sendable {
         override class func canInit(with request: URLRequest) -> Bool { true }
         override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
         override func startLoading() {
