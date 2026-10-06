@@ -27,6 +27,7 @@ struct AgentTabContent {
             guard let pane else { return false }
             return pane.services.registry.openAgentPreview(url, pane: pane.paneKey)
         }
+        AgentReplySites(services: services).wire(view.model.replyLinks)
         return .agent(view)
     }
 }

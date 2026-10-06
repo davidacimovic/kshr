@@ -75,6 +75,8 @@ public struct CmuxConfigSnapshot: Sendable, Equatable {
     public var browserOmnibar = BrowserOmnibarSetting.fallback
     /// `browser.remoteLocalhost` and `browser.remoteLocalhostWorkspaces`.
     public var remoteLocalhost: RemoteLocalhostSetting = .fallback
+    /// `agentPane.links.outsideRoots` and `agentPane.images.remote`.
+    public var agentPaneReplies: AgentPaneReplySetting = .fallback
     /// `ui.animationSpeed`; "fast" when unset or invalid.
     public var animationSpeed: MotionSpeed = AnimationSpeedSetting.fallback
     /// `layout.centerFocusedColumn`; "never" when unset or invalid.
@@ -225,6 +227,9 @@ public struct CmuxConfigSnapshot: Sendable, Equatable {
         let (remoteLocalhost, remoteLocalhostDiagnostics) = RemoteLocalhostSetting.parse(root)
         snapshot.remoteLocalhost = remoteLocalhost
         snapshot.diagnostics += remoteLocalhostDiagnostics
+        let (agentPaneReplies, agentPaneDiagnostics) = AgentPaneReplySetting.parse(root)
+        snapshot.agentPaneReplies = agentPaneReplies
+        snapshot.diagnostics += agentPaneDiagnostics
         let paneChrome = PaneChromeConfigParser.parse(root)
         snapshot.paneChrome = paneChrome.overrides
         snapshot.diagnostics += paneChrome.diagnostics
