@@ -39,6 +39,26 @@ Each release (tags are `kshr-v<upstream version>[-N]`, never upstream's `v*`):
 The app updates itself from
 `https://github.com/davidacimovic/kshr/releases/latest/download/appcast.xml`.
 
+## Installing a local build on this Mac
+
+The bundle identifier is cmux's, so KSHR replaces cmux rather than running
+beside it, and the old KSHR 0.63.1 (also `KSHR.app`) must be out of the way.
+
+1. `./scripts/kshr-release.sh kshr-vX.Y.Z --build-only` leaves
+   `build/Build/Products/Release/KSHR.app` (signed, not notarized; fine for a
+   local launch, since nothing downloaded it).
+2. Quit cmux and the old KSHR once their tabs are empty, then:
+   `mv /Applications/KSHR.app ~/Applications/KSHR-0.63.1-old.app`,
+   `brew uninstall --cask cmux` (or move cmux.app aside),
+   `ditto build/Build/Products/Release/KSHR.app /Applications/KSHR.app`,
+   `open /Applications/KSHR.app`.
+3. Click Allow on the Desktop, Documents and Downloads prompts the first time a
+   tab touches them: the grants are keyed to the new signature.
+4. Re-open sessions with `cc-takeover.sh <session>` or `claudecode --resume`.
+
+A notarized DMG from the full release script installs the same way, and
+Sparkle keeps it current from then on.
+
 ## Taking an upstream release
 
 ```bash
