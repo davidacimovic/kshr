@@ -280,14 +280,9 @@ function fallbackRowHeight(row: AcpmuxRow, width: number): number {
   return 24 + chromeHeight(row) + textLines * MESSAGE_LINE_HEIGHT;
 }
 
-/// A link target the page opens: http and https only.
-export function safeHref(href: string): string | undefined {
-  try {
-    return /^https?:$/i.test(new URL(href, "https://cmux.invalid").protocol) ? href : undefined;
-  } catch {
-    return undefined;
-  }
-}
+/// A link target the page opens: absolute http and https only (replyHref.ts).
+import { safeHref } from "./replyHref";
+export { safeHref };
 
 /// The text `renderInline` in conversation/Markdown.tsx draws for `tokens`, as the estimator
 /// measures it. Inline code draws in 12px monospace (conversation.css), no wider per character than the prose font's digits,
