@@ -5,6 +5,12 @@ public import Foundation
 /// browsing data. Runs off the main thread (it touches the file system).
 public struct BrowserSourceDetector: Sendable {
     public var environment: ImportEnvironment
+    /// Whether Safari's files are opened to learn what can be imported. They
+    /// sit in privacy-protected locations (`~/Library/Safari`, Safari's
+    /// container), so opening them can raise a macOS prompt; detection that no
+    /// person asked for passes false, and Safari then reads as needing Full
+    /// Disk Access until the user checks again (LAUNCH-NO-TCC-PROMPTS).
+    public var readsProtectedData = true
 
     public init(environment: ImportEnvironment) {
         self.environment = environment
@@ -94,6 +100,12 @@ public struct BrowserSourceDetector: Sendable {
             .passwords: present("logins.json") ? .unsupported(.exportFromSource) : .absent,
             .cookies: session(present("cookies.sqlite") ? .available : .absent),
         ]
+    }
+
+    /// Safari's kinds without opening a file: each needs the access check.
+    static func unprobedSafariAvailability(cookies: URL?) -> [ImportDataKind: DataAvailability] {
+        [.bookmarks: .needsFullDiskAccess, .history: .needsFullDiskAccess,
+         .cookies: cookies == nil ? .absent : .needsFullDiskAccess, .passwords: .unsupported(.exportFromSource)]
     }
 
     static func safariAvailability(_ directory: URL, cookies: URL?) -> [ImportDataKind: DataAvailability] {

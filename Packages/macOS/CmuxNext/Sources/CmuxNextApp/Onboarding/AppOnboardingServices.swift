@@ -113,10 +113,12 @@ final class AppOnboardingServices: OnboardingServices {
         }
     }
 
-    func detectBrowsers() async -> [BrowserSource] {
+    func detectBrowsers(readingProtectedData: Bool) async -> [BrowserSource] {
         await Task.detached {
             let environment = ImportEnvironment.live { NSWorkspace.shared.urlForApplication(withBundleIdentifier: $0) }
-            return BrowserSourceDetector(environment: environment).detect()
+            var detector = BrowserSourceDetector(environment: environment)
+            detector.readsProtectedData = readingProtectedData
+            return detector.detect()
         }.value
     }
 

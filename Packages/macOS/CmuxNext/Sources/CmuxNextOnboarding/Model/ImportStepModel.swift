@@ -86,20 +86,25 @@ public final class ImportStepModel {
     /// Browsers whose data macOS blocks until the user grants Full Disk Access.
     public var needsFullDiskAccess: Bool { sources.contains(where: \.needsFullDiskAccess) }
 
-    /// Detects once; again after `redetect()` (for example after granting Full Disk Access).
+    /// Detects once, when the step shows, without opening any file in a
+    /// privacy-protected location (LAUNCH-NO-TCC-PROMPTS); `redetect()`, a
+    /// person's Check again, also reads those.
     public func detect() {
         guard phase == .idle else { return }
-        redetect()
+        run(readingProtectedData: true)
     }
 
-    public func redetect() {
+    /// Detects again for a person (for example after granting Full Disk Access).
+    public func redetect() { run(readingProtectedData: true) }
+
+    private func run(readingProtectedData: Bool) {
         // Never under a running import: its rows and summary would be lost.
         guard !isImporting else { return }
         endAuthorization()
         task?.cancel()
         phase = .detecting
         task = Task { [weak self, services] in
-            let found = await services.detectBrowsers()
+            let found = await services.detectBrowsers(readingProtectedData: readingProtectedData)
             let chromiumPasswords = found.contains { $0.profiles.contains { $0.availability(of: .passwords).isImportable } }
             let store = chromiumPasswords ? await services.canImportPasswords() : false
             guard let self, !Task.isCancelled else { return }

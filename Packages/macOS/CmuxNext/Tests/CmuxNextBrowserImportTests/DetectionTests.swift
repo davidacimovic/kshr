@@ -106,6 +106,22 @@ import Testing
         #expect(source.profiles[0].availability(of: .history) == .absent)
     }
 
+    /// LAUNCH-NO-TCC-PROMPTS: detection no person asked for opens no Safari
+    /// file (they sit in privacy-protected locations); Safari then reads as
+    /// needing the access check, even when its files are readable.
+    @Test func safariUnprobedWhenProtectedDataIsNotRead() throws {
+        let home = try FixtureHome()
+        let root = home.directory(.safari)
+        try home.write("x", to: root.appending(path: "Bookmarks.plist"))
+        var detector = BrowserSourceDetector(environment: home.environment)
+        detector.readsProtectedData = false
+        let source = try #require(detector.detect(.safari))
+        #expect(source.needsFullDiskAccess)
+        #expect(source.profiles[0].availability(of: .bookmarks) == .needsFullDiskAccess)
+        detector.readsProtectedData = true
+        #expect(try #require(detector.detect(.safari)).profiles[0].availability(of: .bookmarks) == .available)
+    }
+
     @Test func fixtureHomeFromEnvironment() {
         let environment = ImportEnvironment.live(environment: [ImportEnvironment.fixtureHomeKey: "/tmp/fixture-home"]) { _ in
             URL(fileURLWithPath: "/Applications/Real.app")

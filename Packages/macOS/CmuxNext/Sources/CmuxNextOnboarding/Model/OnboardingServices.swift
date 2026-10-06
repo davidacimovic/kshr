@@ -54,7 +54,9 @@ public protocol OnboardingServices: AnyObject {
     var homeDirectory: URL { get }
 
     // Import
-    func detectBrowsers() async -> [BrowserSource]
+    /// The browsers to import from. `readingProtectedData` is true only after
+    /// a person asked (Check again): it opens Safari's privacy-protected files.
+    func detectBrowsers(readingProtectedData: Bool) async -> [BrowserSource]
     func runImport(_ plan: ImportPlan, progress: @escaping @MainActor (ImportProgress) -> Void) async throws -> ImportSummary
     /// Whether this build can save imported passwords (the browser engine has the store).
     func canImportPasswords() async -> Bool
