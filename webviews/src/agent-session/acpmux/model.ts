@@ -3,6 +3,7 @@ import type { HandoffClientState } from "./handoff/client";
 import type { Enforcement } from "./handoff/protocol";
 import type { SlashCommand } from "./slashCommands";
 import type { SummaryCheckpoint } from "./changes/turnCheckpointSource";
+import { safeHref } from "./replyHref";
 
 export type AcpmuxRow = {
   id: string;
@@ -281,7 +282,6 @@ function fallbackRowHeight(row: AcpmuxRow, width: number): number {
 }
 
 /// A link target the page opens: absolute http and https only (replyHref.ts).
-import { safeHref } from "./replyHref";
 export { safeHref };
 
 /// The text `renderInline` in conversation/Markdown.tsx draws for `tokens`, as the estimator
