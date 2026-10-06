@@ -75,6 +75,32 @@ import Testing
         #expect(!rig.gestures.consume(), "once")
     }
 
+    @Test func zzDiagnosticKeyPath() async throws {
+        let app = NSApplication.shared
+        let rig = try rig()
+        defer { rig.view.close(); rig.window.close() }
+        var seen: [String] = []
+        let probe = NSEvent.addLocalMonitorForEvents(matching: [.keyDown]) { event in
+            seen.append("monitor main=\(Thread.isMainThread) windowMatch=\(event.window === rig.window) eventWindowNil=\(event.window == nil)")
+            return event
+        }
+        defer { if let probe { NSEvent.removeMonitor(probe) } }
+        let ok = rig.window.makeFirstResponder(rig.view.webView)
+        let fr = rig.window.firstResponder
+        let inWeb = (fr as? NSView)?.isDescendant(of: rig.view.webView) == true
+        let number = rig.window.windowNumber
+        let lookup = app.window(withWindowNumber: number) === rig.window
+        let event = try #require(NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: [],
+                                                  timestamp: ProcessInfo.processInfo.systemUptime,
+                                                  windowNumber: number, context: nil, characters: "\r",
+                                                  charactersIgnoringModifiers: "\r", isARepeat: false, keyCode: 36))
+        let resolved = event.window === rig.window
+        app.sendEvent(event)
+        await settle()
+        let facts = "makeFR=\(ok) frType=\(fr.map { String(describing: type(of: $0)) } ?? "nil") inWeb=\(inWeb) windowNumber=\(number) lookup=\(lookup) resolved=\(resolved) viewWindow=\(rig.view.window === rig.window) app=\(String(describing: type(of: app))) running=\(app.isRunning) seen=\(seen) recorded=\(rig.gestures.isAvailable)"
+        #expect(Bool(false), "DIAG \(facts)")
+    }
+
     @Test func aKeyThatMovesFocusIntoTheWebViewIsNoGesture() async throws {
         let rig = try rig()
         defer { rig.view.close(); rig.window.close() }
