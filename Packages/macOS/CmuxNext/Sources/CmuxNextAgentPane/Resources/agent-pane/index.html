@@ -2153,10 +2153,10 @@ img.ProseMirror-separator {
 .acpmux-effort .acpmux-picker-button,.acpmux-picker-button .acpmux-icon:last-child{color:var(--agent-muted)}
 .acpmux-context-ring{flex:none;display:grid;place-items:center;width:32px;height:32px;color:var(--agent-muted)}
 .acpmux-context-ring.acpmux-context-full{color:var(--acpmux-warning)}
-.acpmux-send{flex:none;display:grid;place-items:center;width:32px;height:32px;padding:0;border:0;border-radius:50%;background:var(--agent-text);color:var(--acpmux-base)}
-.acpmux-send:not(.acpmux-send-ready):not(.acpmux-cancel):not(:hover){background:color-mix(in srgb,var(--agent-text) 34%,var(--acpmux-base))}
-/* The picker menus open above the field, aligned with its edges. */
-.acpmux-menu{font:13px/18px -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;font-size:14px;position:absolute;bottom:calc(100% + 6px);z-index:3;min-width:min(220px,100%);max-width:min(420px,100%);max-height:min(360px,50vh);overflow:auto;padding:6px;box-sizing:border-box;border-radius:12px;background:var(--acpmux-menu-bg);box-shadow:inset 0 0 0 .5px var(--acpmux-composer-edge),0 10px 30px var(--agent-shadow,rgb(0 0 0/.35));color:var(--agent-text);line-height:18px}
+.acpmux-send{flex:none;display:grid;place-items:center;width:32px;height:32px;padding:0;border:0;border-radius:50%;background:var(--agent-highlight,var(--agent-text));color:var(--agent-highlight-text,var(--acpmux-base))}
+.acpmux-send:not(.acpmux-send-ready):not(.acpmux-cancel):not(:hover){background:color-mix(in srgb,var(--agent-highlight,var(--agent-text)) 72%,var(--acpmux-base))}
+/* The picker menus open above the field at their chip (useUiAnchor). The chip is their containing block, so the width comes from the rows and the viewport, never the chip. */
+.acpmux-menu{font:13px/18px -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;font-size:14px;position:absolute;bottom:calc(100% + 6px);z-index:3;width:max-content;min-width:min(220px,calc(100vw - 16px));max-width:min(420px,calc(100vw - 16px));max-height:min(360px,50vh);overflow:auto;padding:6px;box-sizing:border-box;border-radius:12px;background:var(--acpmux-menu-bg);box-shadow:inset 0 0 0 .5px var(--acpmux-composer-edge),0 10px 30px var(--agent-shadow,rgb(0 0 0/.35));color:var(--agent-text);line-height:18px}
 /* The picker menus open above the field, aligned with its edges. */
 .acpmux-menu-start{left:0}
 .acpmux-menu-end{right:0}
@@ -3520,6 +3520,58 @@ pre.cv-math-source {
 .cv-chip:focus-visible {
   outline: 1px solid var(--cv-link);
   outline-offset: 1px;
+  border-radius: 3px;
+}
+.cv-chip__lock {
+  vertical-align: -1px;
+  margin: 0 0 0 3px;
+  color: var(--cv-link);
+}
+.cv-chip__favicon {
+  border-radius: 3px;
+  object-fit: contain;
+}
+/* A web image before it loads (chips/ReplyImage.tsx, decision D5). */
+.cv-image-placeholder {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  padding: 6px 10px;
+  border: 1px solid color-mix(in srgb, var(--cv-fg) 14%, transparent);
+  border-radius: 8px;
+  vertical-align: middle;
+}
+.cv-image-placeholder__host {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cv-image-placeholder__note {
+  color: var(--cv-link);
+}
+.cv-image-placeholder__load {
+  padding: 2px 8px;
+  border: 1px solid color-mix(in srgb, var(--cv-fg) 20%, transparent);
+  border-radius: 6px;
+  background: none;
+  color: var(--cv-text);
+  font: inherit;
+  cursor: pointer;
+}
+.cv-image-placeholder__load:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+/* The preview card's "Open in" menu (previewCard/OpenInMenu.tsx, decision D6). */
+.acpmux-open-in {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.acpmux-open-in__icon {
+  margin-right: 8px;
+  flex: none;
   border-radius: 3px;
 }
 /* The changes view's per-file menu. Colors come from the pane's theme tokens only. */
