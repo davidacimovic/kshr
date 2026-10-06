@@ -46,7 +46,9 @@ WORK_DIR="${TARGET_TEMP_DIR:-${GO_SRC_DIR}/.tmp}/wireguard-go"
 # shellcheck source=scripts/build-phase-caller-path.sh
 . "${ROOT}/scripts/build-phase-caller-path.sh"
 # Xcode build phases do not inherit a login-shell PATH.
-export PATH="/usr/local/go/bin:/opt/homebrew/bin:/usr/local/bin:${HOME}/go/bin:${PATH}"
+# KSHR: CMUX_GO_BIN_DIR, when set, wins over a stale /usr/local/go (this Mac has an
+# Intel Go 1.14 there that predates net/netip).
+export PATH="${CMUX_GO_BIN_DIR:+${CMUX_GO_BIN_DIR}:}/usr/local/go/bin:/opt/homebrew/bin:/usr/local/bin:${HOME}/go/bin:${PATH}"
 
 case "${CMUX_WIREGUARD_GO_REQUIRE:-}" in
   1|true|TRUE|yes|YES) REQUIRE_GO=1 ;;

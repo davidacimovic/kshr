@@ -43,7 +43,9 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 # Build phases shell out to rustup/cargo (diff sidecar, nucleo FFI, cmux-cua) and go
 # (WireGuard, required for Release); make them visible to xcodebuild's scripts.
-export PATH="$HOME/.cargo/bin:/opt/homebrew/opt/rustup/bin:/opt/homebrew/bin:/usr/local/go/bin:$HOME/go/bin:$PATH"
+export PATH="$HOME/.cargo/bin:/opt/homebrew/opt/rustup/bin:/opt/homebrew/bin:$HOME/go/bin:$PATH"
+# The wireguard-go phase prepends /usr/local/go/bin itself; point it at the real Go.
+if command -v go >/dev/null 2>&1; then export CMUX_GO_BIN_DIR="$(dirname "$(command -v go)")"; fi
 
 SIGN_HASH="${KSHR_SIGN_HASH:-57B8DAD2045B4073DEF92144166DDBE8C2DCE503}"   # Developer ID Application: David Acimovic (X9YF2BH97P)
 ENTITLEMENTS="kshr.entitlements"
@@ -79,8 +81,9 @@ echo "Pre-flight checks passed"
 
 # --- Build app (Release, unsigned) ---
 echo "Building app..."
-rm -rf build/
-xcodebuild -scheme cmux -configuration Release -derivedDataPath build CODE_SIGNING_ALLOWED=NO build 2>&1 | tail -5
+rm -rf build/ && mkdir -p build
+xcodebuild -scheme cmux -configuration Release -derivedDataPath build CODE_SIGNING_ALLOWED=NO build > build/xcodebuild.log 2>&1 || { tail -40 build/xcodebuild.log; echo "xcodebuild failed (full log: build/xcodebuild.log)" >&2; exit 1; }
+tail -3 build/xcodebuild.log
 [[ -d "$BUILT_APP" ]] || { echo "build produced no $BUILT_APP" >&2; exit 1; }
 [[ -x "$BUILT_APP/Contents/Resources/bin/ghostty" ]] || { echo "Ghostty theme picker helper missing" >&2; exit 1; }
 echo "Build succeeded"
