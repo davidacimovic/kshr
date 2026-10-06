@@ -18,7 +18,7 @@ extension AgentTabStore {
             return agentHome(of: resolve(provisional))
         }
         model.onChooseFolder = { [weak self] in
-            guard let self else { return nil }
+            guard let self else { return .cancelled }
             return await chooseAgentFolder(for: resolve(provisional))
         }
     }

@@ -8,7 +8,7 @@ import Testing
 /// meet a daemon without `workspace.agent_folder.set` (AGENT-CWD-FOR-FOLDERLESS-WORKSPACE).
 /// Choose Folder… then says to restart the background service: never a crash, never silence.
 @MainActor @Suite(.serialized, .timeLimit(.minutes(1))) struct AgentFolderVersionSkewTests {
-    static let unknownVariant = #"{"code":"validation.invalid","message":"invalid request envelope","details":{"error":"unknown variant `workspace.agent_folder.set`, expected one of `workspace.update`"},"retryable":false}"#
+    nonisolated static let unknownVariant = #"{"code":"validation.invalid","message":"invalid request envelope","details":{"error":"unknown variant `workspace.agent_folder.set`, expected one of `workspace.update`"},"retryable":false}"#
 
     func services(_ daemon: StateDaemon) async throws -> AppServices {
         try await StateMutationRoutingTests().services(daemon)
