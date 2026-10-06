@@ -147,6 +147,9 @@ extension SettingsSchema {
         "feed.github.enabled": .network,
         "feed.github.pollIntervalSeconds": .network,
         "browser.remoteLocalhost": .network,
+        // A reply's file link outside the project, and a reply's web image (D4, D5).
+        "agentPane.links.outsideRoots": .privacy,
+        "agentPane.images.remote": .network,
         "app.quitBehavior": .destructive,
         // Off, a close ends running programs and agents without asking.
         "app.warnBeforeClosingTab": .destructive,

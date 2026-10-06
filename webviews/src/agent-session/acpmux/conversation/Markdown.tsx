@@ -14,8 +14,9 @@ import { ArxivMark, Check, FileDoc, GitHubMark, Globe, ImageIcon } from "./icons
 import { MathDisplay, MathInline } from "./Math";
 import { normalizeMath } from "./mathDelimiters";
 import { IncrementalMarkdown, type KeyedBlock } from "./incrementalMarkdown";
-import { PathChip, UrlChip } from "../chips/LinkChips";
+import { linkedText, PathChip, UrlChip } from "../chips/LinkChips";
 import { codePath, linkPath } from "../chips/paths";
+import { ReplyImage } from "../chips/ReplyImage";
 
 export type Align = "left" | "center" | "right" | null;
 
@@ -310,7 +311,7 @@ export function renderInline(source: string, opts: InlineOptions = {}): ReactNod
   let last = 0;
   let k = 0;
   for (const m of text.matchAll(INLINE_RE)) {
-    if (m.index! > last) out.push(text.slice(last, m.index));
+    if (m.index! > last) out.push(...linkedText(text.slice(last, m.index), `t${k++}`));
     const t = m[0];
     if (m[1]) {
       const path = codePath(t.slice(1, -1));
@@ -374,7 +375,7 @@ export function renderInline(source: string, opts: InlineOptions = {}): ReactNod
     }
     last = m.index! + t.length;
   }
-  if (last < text.length) out.push(text.slice(last));
+  if (last < text.length) out.push(...linkedText(text.slice(last), `t${k++}`));
   return out;
 }
 
@@ -387,19 +388,19 @@ function InlineImage({ source, opts }: { source: string; opts: InlineOptions }) 
   if (INLINE_IMAGE.test(src)) return <img className="cv-img" src={src} alt={alt} />;
   const name = alt || src.split(/[?#]/)[0]!.split("/").filter(Boolean).at(-1) || src;
   const href = safeHref(src);
-  if (!href)
-    return (
-      <span className="cv-link is-image" title={src}>
-        <ImageIcon size={16} className="cv-link__icon" />
-        {renderInline(name, opts)}
-      </span>
-    );
-  return (
+  const fallback = !href ? (
+    <span className="cv-link is-image" title={src}>
+      <ImageIcon size={16} className="cv-link__icon" />
+      {renderInline(name, opts)}
+    </span>
+  ) : (
     <a className="cv-link is-image" href={href} rel="noreferrer" title={src}>
       <ImageIcon size={16} className="cv-link__icon" />
       {renderInline(name, opts)}
     </a>
   );
+  // A file inside the session's folders, or a web image, loads through the host (D5).
+  return <ReplyImage src={src} alt={alt} fallback={fallback} />;
 }
 
 /// A data URL image over MAX_DATA_URL_LENGTH: its alt text (or "Image too large to show") with the
