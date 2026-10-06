@@ -91,7 +91,7 @@ public final class ImportStepModel {
     /// person's Check again, also reads those.
     public func detect() {
         guard phase == .idle else { return }
-        run(readingProtectedData: true)
+        run(readingProtectedData: false)
     }
 
     /// Detects again for a person (for example after granting Full Disk Access).

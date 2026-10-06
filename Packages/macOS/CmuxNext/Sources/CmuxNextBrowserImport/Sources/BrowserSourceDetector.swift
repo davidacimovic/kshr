@@ -44,7 +44,8 @@ public struct BrowserSourceDetector: Sendable {
             return profiles.isEmpty ? nil : BrowserSource(browser: browser, appURL: appURL, profiles: profiles)
         case .safari:
             let cookies = browser.safariCookieFile.map { environment.homeDirectory.appending(path: $0) }
-            let availability = Self.safariAvailability(directory, cookies: cookies)
+            let availability = readsProtectedData ? Self.safariAvailability(directory, cookies: cookies)
+                : Self.unprobedSafariAvailability(cookies: cookies)
             let blocked = availability.values.contains(.needsFullDiskAccess)
             let profile = BrowserSourceProfile(browser: browser, directoryName: "Safari", displayName: browser.displayName,
                                                path: directory, availability: availability)
