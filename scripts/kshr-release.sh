@@ -152,6 +152,10 @@ DOWNLOAD_URL_PREFIX="https://github.com/$GH_REPO/releases/download/$TAG/" \
 RELEASE_NOTES_URL="https://github.com/$GH_REPO/releases/tag/$TAG" \
   ./scripts/sparkle_generate_appcast.sh "$DMG" "$TAG" appcast.xml
 
+# --- Tag the released commit (without this, gh would tag the fork's default branch) ---
+git rev-parse -q --verify "refs/tags/$TAG" >/dev/null || git tag -a "$TAG" -m "$TAG"
+git push origin "refs/tags/$TAG"
+
 # --- GitHub release on the fork ---
 if gh release view "$TAG" >/dev/null 2>&1; then
   EXISTING="$(gh release view "$TAG" --json assets --jq '.assets[].name' || true)"
