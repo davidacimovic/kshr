@@ -5,9 +5,10 @@ set -euo pipefail
 # David's Developer ID, notarize, make the DMG and the Sparkle appcast, and
 # publish a GitHub release on davidacimovic/kshr.
 #
-# Usage: ./scripts/kshr-release.sh <tag> [--build-only] [--allow-overwrite]
+# Usage: ./scripts/kshr-release.sh <tag> [--build-only|--resume] [--allow-overwrite]
 #   <tag>             kshr-v<upstream version>[-N], e.g. kshr-v0.65.0
 #   --build-only      stop after signing; leaves build/Build/Products/Release/KSHR.app
+#   --resume          skip the build; notarize and release the signed KSHR.app left by --build-only
 #   --allow-overwrite replace existing release assets for the same tag
 #
 # Differences from scripts/build-sign-upload.sh (upstream):
@@ -23,11 +24,13 @@ set -euo pipefail
 usage() { sed -n '4,16p' "$0"; }
 
 BUILD_ONLY=0
+RESUME=0
 ALLOW_OVERWRITE=0
 POSITIONAL=()
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --build-only) BUILD_ONLY=1; shift ;;
+    --resume) RESUME=1; shift ;;
     --allow-overwrite) ALLOW_OVERWRITE=1; shift ;;
     -h|--help) usage; exit 0 ;;
     -*) echo "Unknown option: $1" >&2; usage >&2; exit 1 ;;
@@ -75,46 +78,52 @@ if (( ! BUILD_ONLY )); then
 fi
 echo "Pre-flight checks passed"
 
-# --- GhosttyKit (prebuilt when the pinned checksum exists, else zig build) ---
-./scripts/ensure-ghosttykit.sh
-[[ -d GhosttyKit.xcframework ]] || cp -R ghostty/macos/GhosttyKit.xcframework GhosttyKit.xcframework
+if (( RESUME )); then
+  [[ -d "$APP_PATH" ]] || { echo "--resume: no $APP_PATH (run --build-only first)" >&2; exit 1; }
+  codesign --verify --strict --deep "$APP_PATH" || { echo "--resume: $APP_PATH is not validly signed" >&2; exit 1; }
+  echo "Resuming with the signed $APP_PATH ($(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP_PATH/Contents/Info.plist"))"
+else
+  # --- GhosttyKit (prebuilt when the pinned checksum exists, else zig build) ---
+  ./scripts/ensure-ghosttykit.sh
+  [[ -d GhosttyKit.xcframework ]] || cp -R ghostty/macos/GhosttyKit.xcframework GhosttyKit.xcframework
 
-# --- Build app (Release, unsigned) ---
-echo "Building app..."
-rm -rf build/ && mkdir -p build
-xcodebuild -scheme cmux -configuration Release -derivedDataPath build CODE_SIGNING_ALLOWED=NO build > build/xcodebuild.log 2>&1 || { tail -40 build/xcodebuild.log; echo "xcodebuild failed (full log: build/xcodebuild.log)" >&2; exit 1; }
-tail -3 build/xcodebuild.log
-[[ -d "$BUILT_APP" ]] || { echo "build produced no $BUILT_APP" >&2; exit 1; }
-[[ -x "$BUILT_APP/Contents/Resources/bin/ghostty" ]] || { echo "Ghostty theme picker helper missing" >&2; exit 1; }
-echo "Build succeeded"
+  # --- Build app (Release, unsigned) ---
+  echo "Building app..."
+  rm -rf build/ && mkdir -p build
+  xcodebuild -scheme cmux -configuration Release -derivedDataPath build CODE_SIGNING_ALLOWED=NO build > build/xcodebuild.log 2>&1 || { tail -40 build/xcodebuild.log; echo "xcodebuild failed (full log: build/xcodebuild.log)" >&2; exit 1; }
+  tail -3 build/xcodebuild.log
+  [[ -d "$BUILT_APP" ]] || { echo "build produced no $BUILT_APP" >&2; exit 1; }
+  [[ -x "$BUILT_APP/Contents/Resources/bin/ghostty" ]] || { echo "Ghostty theme picker helper missing" >&2; exit 1; }
+  echo "Build succeeded"
 
-# --- Brand: KSHR.app, display name, Sparkle feed and key ---
-mv "$BUILT_APP" "$APP_PATH"
-APP_PLIST="$APP_PATH/Contents/Info.plist"
-for key in CFBundleName CFBundleDisplayName; do
-  /usr/libexec/PlistBuddy -c "Set :$key KSHR" "$APP_PLIST" 2>/dev/null \
-    || /usr/libexec/PlistBuddy -c "Add :$key string KSHR" "$APP_PLIST"
-done
-SPARKLE_PUBLIC_KEY_DERIVED=$(swift scripts/derive_sparkle_public_key.swift "$SPARKLE_PRIVATE_KEY")
-/usr/libexec/PlistBuddy -c "Delete :SUPublicEDKey" "$APP_PLIST" 2>/dev/null || true
-/usr/libexec/PlistBuddy -c "Delete :SUFeedURL" "$APP_PLIST" 2>/dev/null || true
-/usr/libexec/PlistBuddy -c "Add :SUPublicEDKey string $SPARKLE_PUBLIC_KEY_DERIVED" "$APP_PLIST"
-/usr/libexec/PlistBuddy -c "Add :SUFeedURL string $FEED_URL" "$APP_PLIST"
-echo "Branded: $(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP_PLIST") / $(/usr/libexec/PlistBuddy -c 'Print :CFBundleDisplayName' "$APP_PLIST") / feed $FEED_URL"
+  # --- Brand: KSHR.app, display name, Sparkle feed and key ---
+  mv "$BUILT_APP" "$APP_PATH"
+  APP_PLIST="$APP_PATH/Contents/Info.plist"
+  for key in CFBundleName CFBundleDisplayName; do
+    /usr/libexec/PlistBuddy -c "Set :$key KSHR" "$APP_PLIST" 2>/dev/null \
+      || /usr/libexec/PlistBuddy -c "Add :$key string KSHR" "$APP_PLIST"
+  done
+  SPARKLE_PUBLIC_KEY_DERIVED=$(swift scripts/derive_sparkle_public_key.swift "$SPARKLE_PRIVATE_KEY")
+  /usr/libexec/PlistBuddy -c "Delete :SUPublicEDKey" "$APP_PLIST" 2>/dev/null || true
+  /usr/libexec/PlistBuddy -c "Delete :SUFeedURL" "$APP_PLIST" 2>/dev/null || true
+  /usr/libexec/PlistBuddy -c "Add :SUPublicEDKey string $SPARKLE_PUBLIC_KEY_DERIVED" "$APP_PLIST"
+  /usr/libexec/PlistBuddy -c "Add :SUFeedURL string $FEED_URL" "$APP_PLIST"
+  echo "Branded: $(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP_PLIST") / $(/usr/libexec/PlistBuddy -c 'Print :CFBundleDisplayName' "$APP_PLIST") / feed $FEED_URL"
 
-# Non-sandboxed app: Sparkle's sandbox-only XPC services would stall the installer handoff.
-./scripts/remove-sparkle-sandbox-xpc-services.sh "$APP_PATH"
+  # Non-sandboxed app: Sparkle's sandbox-only XPC services would stall the installer handoff.
+  ./scripts/remove-sparkle-sandbox-xpc-services.sh "$APP_PATH"
 
-# --- Codesign (one pass, no provisioning profile) ---
-echo "Codesigning..."
-CMUX_SIGN_MODE=all ./scripts/sign-cmux-bundle.sh "$APP_PATH" "$ENTITLEMENTS" "$SIGN_HASH"
-codesign -dvv "$APP_PATH" 2>&1 | grep -E '^(Identifier|Authority=Developer|TeamIdentifier)' | sed 's/^/  /'
-echo "Codesign verified"
+  # --- Codesign (one pass, no provisioning profile) ---
+  echo "Codesigning..."
+  CMUX_SIGN_MODE=all ./scripts/sign-cmux-bundle.sh "$APP_PATH" "$ENTITLEMENTS" "$SIGN_HASH"
+  codesign -dvv "$APP_PATH" 2>&1 | grep -E '^(Identifier|Authority=Developer|TeamIdentifier)' | sed 's/^/  /'
+  echo "Codesign verified"
 
-if (( BUILD_ONLY )); then
-  echo ""
-  echo "=== build-only: $APP_PATH is signed (not notarized) ==="
-  exit 0
+  if (( BUILD_ONLY )); then
+    echo ""
+    echo "=== build-only: $APP_PATH is signed (not notarized) ==="
+    exit 0
+  fi
 fi
 
 # --- Notarize app ---
