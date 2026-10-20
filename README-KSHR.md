@@ -11,9 +11,9 @@ and shipped to the people who use it, under cmux's license (see LICENSE).
 
 | Where | Change |
 |---|---|
-| `cmux.xcodeproj/project.pbxproj` | app bundle identifier `com.kshrterm.app` |
 | `AppIcon.icon/`, `Assets.xcassets/AppIcon*` | KSHR icon |
 | `kshr.entitlements` | `cmux.entitlements` without the Cloud-tunnel and passkey entitlements that need Manaflow's provisioning profile |
+| `scripts/build-wireguard-go.sh` | honours `CMUX_GO_BIN_DIR` so the release script's Go wins over a stale `/usr/local/go` |
 | `scripts/kshr-release.sh` | build, brand (`KSHR.app`, display name KSHR, our Sparkle key and feed), sign, notarize, DMG, appcast, GitHub release on this fork |
 | `README-KSHR.md` | this file |
 
